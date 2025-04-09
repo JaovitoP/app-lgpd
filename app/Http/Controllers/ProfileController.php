@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
@@ -51,6 +53,30 @@ class ProfileController extends Controller
         Auth::logout();
 
         $user->delete();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return Redirect::to('/');
+    }
+
+    public function anonymize(Request $request): RedirectResponse
+    {
+
+        $request->validateWithBag('userAnonymization', [
+            'password' => ['required', 'current_password'],
+        ]);
+
+        $user = $request->user();
+
+    
+        $user->name = 'user_'.uniqid();
+        $user->email = 'anonimo_'.uniqid().'@example.com';
+        $user->password = Hash::make(Str::random(40));
+        
+        $user->save();
+
+        Auth::logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();
